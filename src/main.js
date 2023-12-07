@@ -5,7 +5,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 var scene = new THREE.Scene();
 var camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
 camera.position.z = 5;
-camera.zoom = 82; // Adjust the zoom level
+camera.zoom = 120; // Adjust the zoom level
 camera.updateProjectionMatrix(); // Update the camera's projection matrix
 
 var renderer = new THREE.WebGLRenderer();
@@ -13,6 +13,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 var selectedPlane = null;
+var hoveredPlane = null; // Variable to keep track of the plane being hovered over
 
 // Variable to control the upper end of the speed
 var speedScale = 0.01;
@@ -24,8 +25,15 @@ var planeScale = 0.1;
 var minScaleMultiplier = 0.5;
 var maxScaleMultiplier = 1.5;
 
+// Variable for the extremes
+var planeDistance = 3;
+
+// Create a new material that is green and wireframe
+var wireframeMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: true});
+
 // Create 6 planes with unique pivot points
 var pivots = [];
+var planes = []; // Array to hold the planes
 for (let i = 0; i < 6; i++) {
   // Random scale for each plane, within the range defined by minScaleMultiplier and maxScaleMultiplier
   var randomScale = minScaleMultiplier + Math.random() * (maxScaleMultiplier - minScaleMultiplier);
@@ -33,9 +41,9 @@ for (let i = 0; i < 6; i++) {
   var geometry = new THREE.PlaneGeometry(16 * planeScale * randomScale, 9 * planeScale * randomScale); // Use planeScale and randomScale to set the size of the planes
   var material = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.DoubleSide}); // Use MeshBasicMaterial which doesn't require lighting
   var plane = new THREE.Mesh(geometry, material);
-  plane.position.x = (Math.random() - 0.5) * 5;
-  plane.position.y = (Math.random() - 0.5) * 5;
-  plane.position.z = (Math.random() - 0.5) * 5;
+  plane.position.x = (Math.random() - 0.5) * planeDistance;
+  plane.position.y = (Math.random() - 0.5) * planeDistance;
+  plane.position.z = (Math.random() - 0.5) * planeDistance;
   plane.originalPosition = plane.position.clone(); // Store the original position
 
   var pivot = new THREE.Object3D();
@@ -43,6 +51,7 @@ for (let i = 0; i < 6; i++) {
   pivot.rotationAxis = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(); // Random rotation axis for each pivot
   pivot.add(plane);
   pivots.push(pivot);
+  planes.push(plane); // Add the plane to the planes array
   scene.add(pivot);
 }
 
@@ -57,6 +66,9 @@ var mouse = new THREE.Vector2();
 
 // Add an event listener for when the mouse is clicked
 window.addEventListener('mousedown', onMouseDown, false);
+
+// Add an event listener for when the mouse moves
+window.addEventListener('mousemove', onMouseMove, false);
 
 function onMouseDown(event) {
   // Convert the mouse position to normalized device coordinates (-1 to +1)
@@ -74,8 +86,8 @@ function onMouseDown(event) {
     if (selectedPlane) {
       selectedPlane.material.color.set(0x00ff00); // Change the color of the previously selected plane back to green
       new TWEEN.Tween(selectedPlane.position)
-        .to({ x: selectedPlane.originalPosition.x, y: selectedPlane.originalPosition.y, z: selectedPlane.originalPosition.z }, 2000)
-        .easing(TWEEN.Easing.Quadratic.Out)
+        .to({ x: selectedPlane.originalPosition.x, y: selectedPlane.originalPosition.y, z: selectedPlane.originalPosition.z }, 1000)
+        .easing(TWEEN.Easing.Exponential.InOut)
         .start();
     }
     selectedPlane = intersects[0].object;
@@ -83,19 +95,47 @@ function onMouseDown(event) {
 
     // Animate the clicked plane moving towards the center
     new TWEEN.Tween(selectedPlane.position)
-      .to({ x: 0, y: 0, z: 0 }, 2000)
-      .easing(TWEEN.Easing.Quadratic.Out)
+      .to({ x: 0, y: 0, z: 0 }, 1000)
+      .easing(TWEEN.Easing.Exponential.InOut)
       .start();
   } else {
     // If the click was outside a plane, return to orbiting state
     if (selectedPlane) {
       selectedPlane.material.color.set(0x00ff00); // Change the color of the previously selected plane back to green
       new TWEEN.Tween(selectedPlane.position)
-        .to({ x: selectedPlane.originalPosition.x, y: selectedPlane.originalPosition.y, z: selectedPlane.originalPosition.z }, 2000)
-        .easing(TWEEN.Easing.Quadratic.Out)
+        .to({ x: selectedPlane.originalPosition.x, y: selectedPlane.originalPosition.y, z: selectedPlane.originalPosition.z }, 1000)
+        .easing(TWEEN.Easing.Exponential.InOut)
         .start();
     }
     selectedPlane = null; // Reset the selected plane
+  }
+}
+
+function onMouseMove(event) {
+  // Convert the mouse position to normalized device coordinates (-1 to +1)
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // Update the picking ray with the camera and mouse position
+  raycaster.setFromCamera(mouse, camera);
+
+  // Calculate objects intersecting the picking ray, including descendants of the scene's children
+  var intersects = raycaster.intersectObjects(scene.children, true);
+
+  if (intersects.length > 0) {
+    // If a plane was hovered over, change its material to the wireframe material
+    if (hoveredPlane) {
+      hoveredPlane.material = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.DoubleSide}); // Reset the material of the previously hovered plane
+    }
+    hoveredPlane = intersects[0].object;
+    hoveredPlane.material = wireframeMaterial; // Set the material of the hovered plane to the wireframe material
+    console.log('Plane hovered over:', hoveredPlane); // Log the hovered plane
+  } else {
+    // If the mouse moved off a plane, change its material back
+    if (hoveredPlane) {
+      hoveredPlane.material = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.DoubleSide}); // Reset the material to the original material
+    }
+    hoveredPlane = null;
   }
 }
 
@@ -107,11 +147,13 @@ function animate() {
     pivot.rotateOnAxis(pivot.rotationAxis, pivot.rotationSpeed);
     if (pivot.children[0] === selectedPlane) {
       pivot.children[0].material.color.set(0xff0000); // Change the color of the currently animated plane to red
-    } else {
-      pivot.children[0].material.color.set(0x00ff00); // Change the color of the other planes back to green
+    } else if (pivot.children[0] !== hoveredPlane) {
+      pivot.children[0].material.color.set(0x00ff00); // Change the color of the other planes back to green, unless it's the hovered plane
     }
     pivot.children[0].lookAt(camera.position); // Make the plane face the camera
-    pivot.children[0].material.wireframe = params.wireframe; // Set the wireframe mode based on the GUI toggle
+    if (pivot.children[0] !== hoveredPlane) {
+      pivot.children[0].material.wireframe = params.wireframe; // Set the wireframe mode based on the GUI toggle, unless it's the hovered plane
+    }
   });
 
   TWEEN.update(); // Add this line
