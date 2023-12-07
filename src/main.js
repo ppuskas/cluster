@@ -11,13 +11,23 @@ var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Variable to control the upper end of the speed
+var speedScale = 0.01;
+
 // Variable to control the scale of the planes
 var planeScale = 0.1;
+
+// Variables to control the minimum and maximum scale multipliers for the planes
+var minScaleMultiplier = 0.5;
+var maxScaleMultiplier = 1.5;
 
 // Create 6 planes with unique pivot points
 var pivots = [];
 for (let i = 0; i < 6; i++) {
-  var geometry = new THREE.PlaneGeometry(16 * planeScale, 9 * planeScale); // Use planeScale to set the size of the planes
+  // Random scale for each plane, within the range defined by minScaleMultiplier and maxScaleMultiplier
+  var randomScale = minScaleMultiplier + Math.random() * (maxScaleMultiplier - minScaleMultiplier);
+
+  var geometry = new THREE.PlaneGeometry(16 * planeScale * randomScale, 9 * planeScale * randomScale); // Use planeScale and randomScale to set the size of the planes
   var material = new THREE.MeshBasicMaterial({color: 0x00ff00, side: THREE.DoubleSide}); // Use MeshBasicMaterial which doesn't require lighting
   var plane = new THREE.Mesh(geometry, material);
   plane.position.x = (Math.random() - 0.5) * 5;
@@ -25,7 +35,7 @@ for (let i = 0; i < 6; i++) {
   plane.position.z = (Math.random() - 0.5) * 5;
 
   var pivot = new THREE.Object3D();
-  pivot.rotationSpeed = Math.random() * 0.02; // Random speed for each pivot
+  pivot.rotationSpeed = Math.random() * speedScale; // Random speed for each pivot, scaled by speedScale
   pivot.rotationAxis = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(); // Random rotation axis for each pivot
   pivot.add(plane);
   pivots.push(pivot);
