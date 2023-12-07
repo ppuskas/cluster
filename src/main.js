@@ -8,7 +8,8 @@ camera.position.z = 5;
 camera.zoom = 120; // Adjust the zoom level
 camera.updateProjectionMatrix(); // Update the camera's projection matrix
 
-var renderer = new THREE.WebGLRenderer();
+var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+// renderer.context.enable(renderer.context.DEPTH_TEST);
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -67,7 +68,7 @@ for (let i = 0; i < 3; i++) {
   });
 
   var texture = new THREE.VideoTexture(video);
-  var material = new THREE.MeshBasicMaterial({ map: texture });
+  var material = new THREE.MeshBasicMaterial({ map: texture, depthWrite: true });
 
   var aspectRatio = videoData.mp4.includes('_portrait') ? 9 / 16 : 16 / 9;
   var geometry = new THREE.PlaneGeometry(planeScale * aspectRatio, planeScale);
@@ -116,14 +117,22 @@ function onMouseDown(event) {
   if (intersects.length > 0) {
     // If a plane was clicked, animate it moving towards the center
     if (selectedPlane) {
-      // selectedPlane.material.color.set(0x00ff00); // Change the color of the previously selected plane back to green
       new TWEEN.Tween(selectedPlane.position)
         .to({ x: selectedPlane.originalPosition.x, y: selectedPlane.originalPosition.y, z: selectedPlane.originalPosition.z }, 1000)
         .easing(TWEEN.Easing.Exponential.InOut)
         .start();
     }
     selectedPlane = intersects[0].object;
-    // selectedPlane.material.color.set(0x0000ff); // Change the color of the clicked plane to blue
+    selectedPlane.material.depthTest = false;
+    selectedPlane.material.needsUpdate = true;  // This line is needed to apply the changes to the material
+    selectedPlane.renderOrder = 1; // Add this line
+
+    // Set the renderOrder of all non-selected planes to 0
+    planes.forEach(plane => {
+      if (plane !== selectedPlane) {
+        plane.renderOrder = 0;
+      }
+    });
 
     // Animate the clicked plane moving towards the center
     new TWEEN.Tween(selectedPlane.position)
@@ -133,7 +142,9 @@ function onMouseDown(event) {
   } else {
     // If the click was outside a plane, return to orbiting state
     if (selectedPlane) {
-      // selectedPlane.material.color.set(0x00ff00); // Change the color of the previously selected plane back to green
+      selectedPlane.material.depthTest = true;
+      selectedPlane.material.needsUpdate = true;  // This line is needed to apply the changes to the material
+      selectedPlane.renderOrder = 0; // Add this line
       new TWEEN.Tween(selectedPlane.position)
         .to({ x: selectedPlane.originalPosition.x, y: selectedPlane.originalPosition.y, z: selectedPlane.originalPosition.z }, 1000)
         .easing(TWEEN.Easing.Exponential.InOut)
