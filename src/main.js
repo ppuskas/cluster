@@ -139,6 +139,12 @@ function onMouseDown(event) {
       .to({ x: 0, y: 0, z: 0 }, 1000)
       .easing(TWEEN.Easing.Exponential.InOut)
       .start();
+
+    // Animate the clicked plane scaling up
+    new TWEEN.Tween(selectedPlane.scale)
+      .to({ x: 3, y: 3, z: 3 }, 1000)
+      .easing(TWEEN.Easing.Exponential.InOut)
+      .start();
   } else {
     // If the click was outside a plane, return to orbiting state
     if (selectedPlane) {
@@ -147,6 +153,12 @@ function onMouseDown(event) {
       selectedPlane.renderOrder = 0; // Add this line
       new TWEEN.Tween(selectedPlane.position)
         .to({ x: selectedPlane.originalPosition.x, y: selectedPlane.originalPosition.y, z: selectedPlane.originalPosition.z }, 1000)
+        .easing(TWEEN.Easing.Exponential.InOut)
+        .start();
+
+      // Animate the previously selected plane scaling down
+      new TWEEN.Tween(selectedPlane.scale)
+        .to({ x: 1, y: 1, z: 1 }, 1000)
         .easing(TWEEN.Easing.Exponential.InOut)
         .start();
     }
