@@ -136,6 +136,19 @@ function onMouseDown(event) {
         selectedPlane.material.map = texture;
         selectedPlane.material.needsUpdate = true;
       }
+      if (selectedPlane.videoSrc.includes('loop_boy')) {
+        // If the plane has been clicked once, load the video and pause it
+        var video = selectedPlane.videoElement;
+        video.src = './public/videos/full/boy_full.mp4';
+        video.crossOrigin = 'anonymous';
+        video.loop = true;
+        video.muted = true;
+        video.pause(); // Pause the video immediately after it's created
+
+        var texture = new THREE.VideoTexture(video);
+        selectedPlane.material.map = texture;
+        selectedPlane.material.needsUpdate = true;
+      }
     } else if (selectedPlane.clickCount === 2) {
       // If the plane has been clicked twice, play the video
       selectedPlane.videoElement.muted = false;
@@ -188,19 +201,39 @@ function onMouseDown(event) {
         .easing(TWEEN.Easing.Exponential.InOut)
         .start();
 
-        // Switch the video back to the loop if the plane leaves the selected state
-     if (selectedPlane.clickCount >= 2) {
-       var video = selectedPlane.videoElement;
-       video.src = selectedPlane.videoSrc;
-       video.crossOrigin = 'anonymous';
-       video.loop = true;
-       video.muted = true;
-       video.play();
+      // Switch the video back to the loop if the plane leaves the selected state
+      if (selectedPlane.clickCount >= 2) {
+        var video = selectedPlane.videoElement;
+        video.src = selectedPlane.videoSrc;
+        video.muted = true; // Mute the video immediately
+        video.crossOrigin = 'anonymous';
+        video.loop = true; // Ensure the video loops
 
-       var texture = new THREE.VideoTexture(video);
-       selectedPlane.material.map = texture;
-       selectedPlane.material.needsUpdate = true;
-    }
+        video.oncanplay = function() {
+          video.play(); // Play the video when it's ready
+        };
+
+        var texture = new THREE.VideoTexture(video);
+        selectedPlane.material.map = texture;
+        selectedPlane.material.needsUpdate = true;
+      }
+
+      // Switch the video back to the loop if the plane leaves the selected state
+      if (selectedPlane.clickCount >= 2 && selectedPlane.videoSrc.includes('loop_awui_landscape')) {
+        var video = selectedPlane.videoElement;
+        video.src = './public/videos/loops/loop_awui_landscape.mp4';
+        video.muted = true; // Mute the video immediately
+        video.crossOrigin = 'anonymous';
+        video.loop = true; // Ensure the video loops
+
+        video.oncanplay = function() {
+          video.play(); // Play the video when it's ready
+        };
+
+        var texture = new THREE.VideoTexture(video);
+        selectedPlane.material.map = texture;
+        selectedPlane.material.needsUpdate = true;
+      }
 
       // Pause and mute the video if the plane leaves the selected state
       if (selectedPlane.clickCount >= 2) {
