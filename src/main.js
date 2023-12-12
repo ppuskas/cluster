@@ -59,14 +59,6 @@ for (let i = 0; i < 3; i++) {
   video.muted = true;
   video.play();
 
-  video.addEventListener('canplaythrough', function() {
-    console.log('Video can play through!');
-  });
-
-  video.addEventListener('play', function() {
-    console.log('Video is playing!');
-  });
-
   var texture = new THREE.VideoTexture(video);
   var material = new THREE.MeshBasicMaterial({ map: texture, depthWrite: true });
 
@@ -78,6 +70,9 @@ for (let i = 0; i < 3; i++) {
   plane.position.y = (Math.random() - 0.5) * planeDistance;
   plane.position.z = (Math.random() - 0.5) * planeDistance;
   plane.originalPosition = plane.position.clone(); // Store the original position
+  plane.clickCount = 0; // Add this line
+  plane.videoSrc = videoData.mp4; // Store the original video source
+  plane.videoElement = video; // Store a reference to the video element
 
   var pivot = new THREE.Object3D();
   pivot.rotationSpeed = minSpeedScale + Math.random() * (speedScale - minSpeedScale); // Random speed for each pivot, scaled by speedScale
@@ -123,6 +118,37 @@ function onMouseDown(event) {
         .start();
     }
     selectedPlane = intersects[0].object;
+    selectedPlane.clickCount += 1; // Increase the click count
+    // Debug: print the click count of the selected plane
+    console.log('Click count for selected plane:', selectedPlane.clickCount);
+
+    if (selectedPlane.clickCount === 1) {
+      if (selectedPlane.videoSrc.includes('loop_awui_landscape')) {
+        // If the plane has been clicked once, load the video and pause it
+        var video = selectedPlane.videoElement;
+        video.src = './public/videos/full/awuwi_full.mp4';
+        video.crossOrigin = 'anonymous';
+        video.loop = true;
+        video.muted = true;
+        video.pause(); // Pause the video immediately after it's created
+
+        var texture = new THREE.VideoTexture(video);
+        selectedPlane.material.map = texture;
+        selectedPlane.material.needsUpdate = true;
+      }
+    } else if (selectedPlane.clickCount === 2) {
+      // If the plane has been clicked twice, play the video
+      selectedPlane.videoElement.muted = false;
+      selectedPlane.material.map.image.play();
+    } else {
+      // If the plane has been clicked more than twice, toggle pause/play
+      if (selectedPlane.material.map.image.paused) {
+        selectedPlane.material.map.image.play();
+      } else {
+        selectedPlane.material.map.image.pause();
+      }
+    }
+
     selectedPlane.material.depthTest = false;
     selectedPlane.material.needsUpdate = true;  // This line is needed to apply the changes to the material
     selectedPlane.renderOrder = 1; // Add this line
@@ -161,8 +187,30 @@ function onMouseDown(event) {
         .to({ x: 1, y: 1, z: 1 }, 1000)
         .easing(TWEEN.Easing.Exponential.InOut)
         .start();
+
+        // Switch the video back to the loop if the plane leaves the selected state
+     if (selectedPlane.clickCount >= 2) {
+       var video = selectedPlane.videoElement;
+       video.src = selectedPlane.videoSrc;
+       video.crossOrigin = 'anonymous';
+       video.loop = true;
+       video.muted = true;
+       video.play();
+
+       var texture = new THREE.VideoTexture(video);
+       selectedPlane.material.map = texture;
+       selectedPlane.material.needsUpdate = true;
     }
-    selectedPlane = null; // Reset the selected plane
+
+      // Pause and mute the video if the plane leaves the selected state
+      if (selectedPlane.clickCount >= 2) {
+        selectedPlane.videoElement.pause();
+        selectedPlane.videoElement.muted = true;
+      }
+
+      selectedPlane.clickCount = 0; // Reset the click count
+      selectedPlane = null; // Reset the selected plane
+    }
   }
 }
 
@@ -184,7 +232,7 @@ function onMouseMove(event) {
     }
     hoveredPlane = intersects[0].object;
     // hoveredPlane.material = wireframeMaterial; // Set the material of the hovered plane to the wireframe material
-    console.log('Plane hovered over:', hoveredPlane); // Log the hovered plane
+    // console.log('Plane hovered over:', hoveredPlane); // Log the hovered plane
   } else {
     // If the mouse moved off a plane, change its material back
     if (hoveredPlane) {
