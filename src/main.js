@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GUI } from 'dat.gui';
 import * as TWEEN from '@tweenjs/tween.js';
+import Hls from 'hls.js';
 
 var scene = new THREE.Scene();
 var camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000);
@@ -41,10 +42,11 @@ var pivots = [];
 var planes = []; // Array to hold the planes
 
 // Define the video data
+// Define the video data
 var videosData = [
-  {mp4: './public/videos/loops/loop_alle_landscape.mp4', webm: './public/videos/loops/loop_alle_landscape.webm'},
-  {mp4: './public/videos/loops/loop_awui_landscape.mp4', webm: './public/videos/loops/loop_awui_landscape.webm'},
-  {mp4: './public/videos/loops/loop_boy_portrait.mp4', webm: './public/videos/loops/loop_boy_portrait.webm'},
+  {hls: './public/videos/loops/loop_alle_landscape.m3u8'},
+  {hls: './public/videos/loops/loop_awui_landscape.m3u8'},
+  {hls: './public/videos/loops/loop_boy_portrait.m3u8'},
   // Add more videos here
 ];
 
@@ -54,7 +56,13 @@ for (let i = 0; i < 3; i++) {
 
   var videoData = videosData[i % videosData.length]; // Get the video data for this plane
   var video = document.createElement('video');
-  video.src = videoData.mp4;
+  if (Hls.isSupported()) {
+    var hls = new Hls();
+    hls.loadSource(videoData.hls);
+    hls.attachMedia(video);
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = videoData.hls;
+  }
   video.crossOrigin = 'anonymous';
   video.loop = true;
   video.muted = true;
@@ -63,16 +71,16 @@ for (let i = 0; i < 3; i++) {
   var texture = new THREE.VideoTexture(video);
   var material = new THREE.MeshBasicMaterial({ map: texture, depthWrite: true });
 
-  var aspectRatio = videoData.mp4.includes('_portrait') ? 9 / 16 : 16 / 9;
+  var aspectRatio = videoData.hls.includes('_portrait') ? 9 / 16 : 16 / 9;
   var geometry = new THREE.PlaneGeometry(planeScale * aspectRatio, planeScale);
-
+  
   var plane = new THREE.Mesh(geometry, material);
   plane.position.x = (Math.random() - 0.5) * planeDistance;
   plane.position.y = (Math.random() - 0.5) * planeDistance;
   plane.position.z = (Math.random() - 0.5) * planeDistance;
   plane.originalPosition = plane.position.clone(); // Store the original position
   plane.clickCount = 0; // Add this line
-  plane.videoSrc = videoData.mp4; // Store the original video source
+  plane.videoSrc = videoData.hls; // Store the original video source
   plane.videoElement = video; // Store a reference to the video element
   plane.layers.set(1); // Assign all planes to a specific layer
 
@@ -131,7 +139,13 @@ function onMouseDown(event) {
       if (selectedPlane.videoSrc.includes('loop_awui_landscape')) {
         // If the plane has been clicked once, load the video and pause it
         var video = selectedPlane.videoElement;
-        video.src = './public/videos/full/awuwi_full.mp4';
+        if (Hls.isSupported()) {
+          var hls = new Hls();
+          hls.loadSource('./public/videos/full/awuwi_full.m3u8');
+          hls.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = './public/videos/full/awuwi_full.m3u8';
+        }
         video.crossOrigin = 'anonymous';
         video.loop = true;
         video.muted = true;
@@ -144,7 +158,13 @@ function onMouseDown(event) {
       if (selectedPlane.videoSrc.includes('loop_boy')) {
         // If the plane has been clicked once, load the video and pause it
         var video = selectedPlane.videoElement;
-        video.src = './public/videos/full/boy_full.mp4';
+        if (Hls.isSupported()) {
+          var hls = new Hls();
+          hls.loadSource('./public/videos/full/boy_full.m3u8');
+          hls.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = './public/videos/full/boy_full.m3u8';
+        }
         video.crossOrigin = 'anonymous';
         video.loop = true;
         video.muted = true;
@@ -211,7 +231,13 @@ function onMouseDown(event) {
       // Switch the video back to the loop if the plane leaves the selected state
       if (selectedPlane.clickCount >= 2) {
         var video = selectedPlane.videoElement;
-        video.src = selectedPlane.videoSrc;
+        if (Hls.isSupported()) {
+          var hls = new Hls();
+          hls.loadSource(selectedPlane.videoSrc);
+          hls.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = selectedPlane.videoSrc;
+        }
         video.muted = true; // Mute the video immediately
         video.crossOrigin = 'anonymous';
         video.loop = true; // Ensure the video loops
@@ -228,7 +254,13 @@ function onMouseDown(event) {
       // Switch the video back to the loop if the plane leaves the selected state
       if (selectedPlane.clickCount >= 2 && selectedPlane.videoSrc.includes('loop_awui_landscape')) {
         var video = selectedPlane.videoElement;
-        video.src = './public/videos/loops/loop_awui_landscape.mp4';
+        if (Hls.isSupported()) {
+          var hls = new Hls();
+          hls.loadSource('./public/videos/loops/loop_awui_landscape.m3u8');
+          hls.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = './public/videos/loops/loop_awui_landscape.m3u8';
+        }
         video.muted = true; // Mute the video immediately
         video.crossOrigin = 'anonymous';
         video.loop = true; // Ensure the video loops
