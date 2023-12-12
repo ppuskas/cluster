@@ -7,6 +7,7 @@ var camera = new THREE.OrthographicCamera(window.innerWidth / - 2, window.innerW
 camera.position.z = 5;
 camera.zoom = 120; // Adjust the zoom level
 camera.updateProjectionMatrix(); // Update the camera's projection matrix
+camera.layers.enableAll(); // Set the camera to see all layers
 
 var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 // renderer.context.enable(renderer.context.DEPTH_TEST);
@@ -73,6 +74,7 @@ for (let i = 0; i < 3; i++) {
   plane.clickCount = 0; // Add this line
   plane.videoSrc = videoData.mp4; // Store the original video source
   plane.videoElement = video; // Store a reference to the video element
+  plane.layers.set(1); // Assign all planes to a specific layer
 
   var pivot = new THREE.Object3D();
   pivot.rotationSpeed = minSpeedScale + Math.random() * (speedScale - minSpeedScale); // Random speed for each pivot, scaled by speedScale
@@ -90,6 +92,7 @@ gui.add(params, 'wireframe');
 
 // Create a raycaster and a vector to hold the mouse position
 var raycaster = new THREE.Raycaster();
+raycaster.layers.set(1); // Set the raycaster to intersect with layer 1 by default
 var mouse = new THREE.Vector2();
 
 // Add an event listener for when the mouse is clicked
@@ -119,6 +122,8 @@ function onMouseDown(event) {
     }
     selectedPlane = intersects[0].object;
     selectedPlane.clickCount += 1; // Increase the click count
+    selectedPlane.layers.set(2); // Move the selected plane to a different layer
+    raycaster.layers.set(2); // Set the raycaster to intersect with layer 2
     // Debug: print the click count of the selected plane
     console.log('Click count for selected plane:', selectedPlane.clickCount);
 
@@ -190,6 +195,8 @@ function onMouseDown(event) {
       selectedPlane.material.depthTest = true;
       selectedPlane.material.needsUpdate = true;  // This line is needed to apply the changes to the material
       selectedPlane.renderOrder = 0; // Add this line
+      selectedPlane.layers.set(1); // Move the plane back to layer 1 when it's deselected
+      raycaster.layers.set(1); // Set the raycaster back to intersect with layer 1 when the plane is deselected
       new TWEEN.Tween(selectedPlane.position)
         .to({ x: selectedPlane.originalPosition.x, y: selectedPlane.originalPosition.y, z: selectedPlane.originalPosition.z }, 1000)
         .easing(TWEEN.Easing.Exponential.InOut)
