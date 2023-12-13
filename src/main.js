@@ -13,7 +13,21 @@ camera.layers.enableAll(); // Set the camera to see all layers
 var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 // renderer.context.enable(renderer.context.DEPTH_TEST);
 renderer.setSize(window.innerWidth, window.innerHeight);
+
+renderer.setClearColor(0x000000); // Set the background color to black
+
 document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize', onWindowResize, false);
+
+function onWindowResize() {
+  // Update camera aspect ratio
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+  // Update renderer size
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 var selectedPlane = null;
 var hoveredPlane = null; // Variable to keep track of the plane being hovered over
@@ -56,6 +70,7 @@ for (let i = 0; i < 3; i++) {
 
   var videoData = videosData[i % videosData.length]; // Get the video data for this plane
   var video = document.createElement('video');
+  video.setAttribute('playsinline', ''); // Add this line
   if (Hls.isSupported()) {
     var hls = new Hls();
     hls.loadSource(videoData.hls);
