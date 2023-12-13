@@ -145,6 +145,8 @@ function onMouseDown(event) {
     }
     selectedPlane = intersects[0].object;
     selectedPlane.clickCount += 1; // Increase the click count
+    console.log('Plane selected:', selectedPlane); // Log the selected plane
+    console.log('Click count for selected plane:', selectedPlane.clickCount); // Log the click count
     selectedPlane.layers.set(2); // Move the selected plane to a different layer
     raycaster.layers.set(2); // Set the raycaster to intersect with layer 2
     // Debug: print the click count of the selected plane
@@ -244,60 +246,36 @@ function onMouseDown(event) {
         .start();
 
       // Switch the video back to the loop if the plane leaves the selected state
-      if (selectedPlane.clickCount >= 2) {
-        var video = selectedPlane.videoElement;
-        if (Hls.isSupported()) {
-          var hls = new Hls();
-          hls.loadSource(selectedPlane.videoSrc);
-          hls.attachMedia(video);
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = selectedPlane.videoSrc;
-        }
-        video.muted = true; // Mute the video immediately
-        video.crossOrigin = 'anonymous';
-        video.loop = true; // Ensure the video loops
-
-        video.oncanplay = function() {
-          video.play(); // Play the video when it's ready
-        };
-
-        var texture = new THREE.VideoTexture(video);
-        selectedPlane.material.map = texture;
-        selectedPlane.material.needsUpdate = true;
+      var video = selectedPlane.videoElement;
+      if (Hls.isSupported()) {
+        var hls = new Hls();
+        hls.loadSource(selectedPlane.videoSrc);
+        hls.attachMedia(video);
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = selectedPlane.videoSrc;
       }
+      video.muted = true; // Mute the video immediately
+      video.crossOrigin = 'anonymous';
+      video.loop = true; // Ensure the video loops
 
-      // Switch the video back to the loop if the plane leaves the selected state
-      if (selectedPlane.clickCount >= 2 && selectedPlane.videoSrc.includes('loop_awui_landscape')) {
-        var video = selectedPlane.videoElement;
-        if (Hls.isSupported()) {
-          var hls = new Hls();
-          hls.loadSource('./public/videos/loops/loop_awui_landscape.m3u8');
-          hls.attachMedia(video);
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = './public/videos/loops/loop_awui_landscape.m3u8';
+      video.oncanplay = function() {
+        if (selectedPlane === plane) {
+          video.play(); // Play the video when it's ready and the plane is still selected
         }
-        video.muted = true; // Mute the video immediately
-        video.crossOrigin = 'anonymous';
-        video.loop = true; // Ensure the video loops
+      };
 
-        video.oncanplay = function() {
-          video.play(); // Play the video when it's ready
-        };
-
-        var texture = new THREE.VideoTexture(video);
-        selectedPlane.material.map = texture;
-        selectedPlane.material.needsUpdate = true;
-      }
+      var texture = new THREE.VideoTexture(video);
+      selectedPlane.material.map = texture;
+      selectedPlane.material.needsUpdate = true;
 
       // Pause and mute the video if the plane leaves the selected state
-      if (selectedPlane.clickCount >= 2) {
-        selectedPlane.videoElement.pause();
-        selectedPlane.videoElement.muted = true;
-      }
+      selectedPlane.videoElement.pause();
+      selectedPlane.videoElement.muted = true;
 
-      selectedPlane.clickCount = 0; // Reset the click count
-      selectedPlane = null; // Reset the selected plane
+      
     }
+    selectedPlane.clickCount = 0; // Reset the click count
+    selectedPlane = null; // Reset the selected plane
   }
 }
 
